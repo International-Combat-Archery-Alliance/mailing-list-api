@@ -2,6 +2,8 @@ github.com/International-Combat-Archery-Alliance/auth v0.2.0 h1:POMQNgpjfagAaXFp
 github.com/International-Combat-Archery-Alliance/auth v0.2.0/go.mod h1:ST1Eo++OlUwQck4VgIGgDHd7rgAvHokyu/R18YsKUu8=
 github.com/International-Combat-Archery-Alliance/captcha v0.1.0 h1:QAXrGpm8XulV2biJZSMPLhHBi17E0/XtR/1sktKGnk4=
 github.com/International-Combat-Archery-Alliance/captcha v0.1.0/go.mod h1:a7DP91/hhCXZLiFdRdgNkz6+qpGwY6dflL9dBEqEN1M=
+github.com/International-Combat-Archery-Alliance/email v0.6.0 h1:ijGrU3sjciaNP+qzkFGPsUN9p6bWybrnxT7hEtqeC/Y=
+github.com/International-Combat-Archery-Alliance/email v0.6.0/go.mod h1:C8UpQfO+B59+wrJdCPPJdxjLjXLZiV7vqwXCEDfNRfs=
 github.com/International-Combat-Archery-Alliance/middleware v0.4.0 h1:Q5Hov3WzUcgYOX4FNzkQcO65jlPYpWDVjx16UBZOZpQ=
 github.com/International-Combat-Archery-Alliance/middleware v0.4.0/go.mod h1:W5agYaAIyixBuUHBzMHTFs0OYFYaeAum2PS4lSxh//U=
 github.com/International-Combat-Archery-Alliance/telemetry v0.2.0 h1:5NJOVZBkHvZahfJgpWaOv1xvYR56WbVPG5NLOoz9s6U=
