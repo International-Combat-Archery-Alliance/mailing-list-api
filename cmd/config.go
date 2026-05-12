@@ -18,7 +18,7 @@ const (
 	newRelicLicenseEnvVar  = "NEW_RELIC_LICENSE_KEY"
 	newRelicLicenseSSMPath = "/newrelic-license-key"
 
-	mailerLiteAPIKeySSMPath     = "/mailerlite-api-key"
+	mailerLiteAPIKeySSMPath     = "/mailerLiteApiKey"
 	cfTurnstileSecretKeySSMPath = "/cfTurnstileSecretKey"
 
 	mailerLiteAPIKeyEnvVar     = "MAILERLITE_API_KEY"
