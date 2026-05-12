@@ -1,0 +1,15 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "mailing-list-api"
+resolve_s3 = true
+s3_prefix = "mailing-list-api"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+disable_rollback = true
+parameter_overrides = "architecture=\"x86_64\""
+image_repositories = ["ICAAMailingList=197461532156.dkr.ecr.us-east-1.amazonaws.com/mailinglistapica12ba65/icaamailinglista7d2285arepo"]
+
+[default.global.parameters]
+region = "us-east-1"
