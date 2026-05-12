@@ -1,0 +1,93 @@
+openapi: 3.0.0
+info:
+  title: ICAA Mailing List
+  version: 1.0.0
+
+servers:
+  - url: https://api.icaa.world/
+  - url: http://localhost:3005/
+
+paths:
+  /mailing-list/signup:
+    post:
+      summary: Sign up for the ICAA mailing list
+      operationId: signupForMailingList
+      security: []
+      parameters:
+        - name: cf-turnstile-response
+          in: header
+          description: Cloudflare Turnstile CAPTCHA token
+          required: true
+          schema:
+            type: string
+            example: XXXX.DUMMY.TOKEN.XXXX
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Successfully signed up for the mailing list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Bad request (invalid captcha)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Invalid email address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    ErrorCode:
+      type: string
+      enum:
+        - InternalError
+        - InputValidationError
+        - InvalidEmail
+        - RateLimited
+        - ServiceError
+        - CaptchaInvalid
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
