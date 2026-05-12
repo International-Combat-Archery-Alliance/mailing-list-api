@@ -42,7 +42,7 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - ssm:GetParameter
+                - ssm:GetParameters
               Resource:
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/mailerlite-api-key"
                 - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cfTurnstileSecretKey"

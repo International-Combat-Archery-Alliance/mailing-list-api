@@ -13,7 +13,6 @@ import (
 	"github.com/International-Combat-Archery-Alliance/mailing-list-api/api"
 	"github.com/International-Combat-Archery-Alliance/telemetry"
 	"go.opentelemetry.io/otel"
-	"golang.org/x/sync/errgroup"
 )
 
 var tracer = otel.Tracer("github.com/International-Combat-Archery-Alliance/mailing-list-api/cmd")
@@ -72,7 +71,20 @@ func setupAPI(logger *slog.Logger) (*api.API, func(context.Context) error, error
 
 	env := getAPIEnvironment()
 
-	licenseKey, err := getNewRelicLicenseKey(ctx, env)
+	var ssmParams map[string]string
+	if env != api.LOCAL {
+		var err error
+		ssmParams, err = getSSMParameters(ctx, []string{
+			newRelicLicenseSSMPath,
+			mailerLiteAPIKeySSMPath,
+			cfTurnstileSecretKeySSMPath,
+		})
+		if err != nil {
+			return nil, func(context.Context) error { return nil }, fmt.Errorf("fetch SSM parameters: %w", err)
+		}
+	}
+
+	licenseKey, err := getNewRelicLicenseKey(env, ssmParams)
 	if err != nil {
 		return nil, func(context.Context) error { return nil }, fmt.Errorf("new relic license key: %w", err)
 	}
@@ -95,36 +107,17 @@ func setupAPI(logger *slog.Logger) (*api.API, func(context.Context) error, error
 	ctx, startupSpan := tracer.Start(ctx, "startup")
 	defer startupSpan.End()
 
-	var (
-		cfg            AppConfig
-		httpClient     *http.Client
-	)
-
-	g, gCtx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		ctx, span := tracer.Start(gCtx, "init-config")
-		defer span.End()
-
-		var err error
-		cfg, err = fetchAppConfig(ctx, env)
-		if err != nil {
-			span.RecordError(err)
-		}
-		return err
-	})
-
-	g.Go(func() error {
-		_, span := tracer.Start(gCtx, "init-http-client")
-		defer span.End()
-
-		httpClient = &http.Client{Timeout: 30 * time.Second}
-		return nil
-	})
-
-	if err := g.Wait(); err != nil {
+	ctx, configSpan := tracer.Start(ctx, "init-config")
+	cfg, err := fetchAppConfig(env, ssmParams)
+	if err != nil {
+		configSpan.RecordError(err)
+		configSpan.End()
 		startupSpan.RecordError(err)
 		return nil, traceShutdown, err
 	}
+	configSpan.End()
+
+	httpClient := &http.Client{Timeout: 30 * time.Second}
 
 	subscriberManager := createSubscriberManager(logger, env, cfg.MailerLiteAPIKey)
 

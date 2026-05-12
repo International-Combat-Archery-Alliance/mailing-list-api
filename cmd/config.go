@@ -49,30 +49,39 @@ func loadAWSConfig(ctx context.Context) (aws.Config, error) {
 	return awsCfg, awsCfgErr
 }
 
-func getSSMParameter(ctx context.Context, name string) (string, error) {
+func getSSMParameters(ctx context.Context, names []string) (map[string]string, error) {
 	cfg, err := loadAWSConfig(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	client := ssm.NewFromConfig(cfg)
-	result, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-		Name:           aws.String(name),
+	result, err := client.GetParameters(ctx, &ssm.GetParametersInput{
+		Names:          names,
 		WithDecryption: aws.Bool(true),
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to get parameter %q: %w", name, err)
+		return nil, fmt.Errorf("failed to get parameters: %w", err)
 	}
 
-	return aws.ToString(result.Parameter.Value), nil
+	params := make(map[string]string, len(result.Parameters))
+	for _, p := range result.Parameters {
+		params[aws.ToString(p.Name)] = aws.ToString(p.Value)
+	}
+
+	if len(result.InvalidParameters) > 0 {
+		return params, fmt.Errorf("invalid parameters: %v", result.InvalidParameters)
+	}
+
+	return params, nil
 }
 
 type AppConfig struct {
-	MailerLiteAPIKey    string
-	TurnstileSecretKey  string
+	MailerLiteAPIKey   string
+	TurnstileSecretKey string
 }
 
-func fetchAppConfig(ctx context.Context, env api.Environment) (AppConfig, error) {
+func fetchAppConfig(env api.Environment, ssmParams map[string]string) (AppConfig, error) {
 	if env == api.LOCAL {
 		return AppConfig{
 			MailerLiteAPIKey:   getEnvOrDefault(mailerLiteAPIKeyEnvVar, ""),
@@ -80,14 +89,14 @@ func fetchAppConfig(ctx context.Context, env api.Environment) (AppConfig, error)
 		}, nil
 	}
 
-	mailerLiteAPIKey, err := getSSMParameter(ctx, mailerLiteAPIKeySSMPath)
-	if err != nil {
-		return AppConfig{}, fmt.Errorf("failed to get mailerlite API key: %w", err)
+	mailerLiteAPIKey, ok := ssmParams[mailerLiteAPIKeySSMPath]
+	if !ok {
+		return AppConfig{}, fmt.Errorf("missing SSM parameter %q", mailerLiteAPIKeySSMPath)
 	}
 
-	turnstileSecretKey, err := getSSMParameter(ctx, cfTurnstileSecretKeySSMPath)
-	if err != nil {
-		return AppConfig{}, fmt.Errorf("failed to get turnstile secret key: %w", err)
+	turnstileSecretKey, ok := ssmParams[cfTurnstileSecretKeySSMPath]
+	if !ok {
+		return AppConfig{}, fmt.Errorf("missing SSM parameter %q", cfTurnstileSecretKeySSMPath)
 	}
 
 	return AppConfig{
@@ -96,11 +105,16 @@ func fetchAppConfig(ctx context.Context, env api.Environment) (AppConfig, error)
 	}, nil
 }
 
-func getNewRelicLicenseKey(ctx context.Context, env api.Environment) (string, error) {
+func getNewRelicLicenseKey(env api.Environment, ssmParams map[string]string) (string, error) {
 	if env == api.LOCAL {
 		return os.Getenv(newRelicLicenseEnvVar), nil
 	}
-	return getSSMParameter(ctx, newRelicLicenseSSMPath)
+
+	key, ok := ssmParams[newRelicLicenseSSMPath]
+	if !ok {
+		return "", fmt.Errorf("missing SSM parameter %q", newRelicLicenseSSMPath)
+	}
+	return key, nil
 }
 
 func getAPIEnvironment() api.Environment {
